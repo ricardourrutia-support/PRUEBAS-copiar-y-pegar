@@ -1,0 +1,565 @@
+<!--
+  Pestaña 3 de la consola. Se inyecta dentro de ConsolaH.html.
+
+  DOS REGLAS que hay que respetar al tocar este archivo:
+    1. Todos los id llevan prefijo "rev-". Comparte documento con las otras
+       pestañas y un id repetido hace que getElementById devuelva el de la
+       pestaña equivocada. Ya pasó una vez y costó encontrarlo.
+    2. Todos los selectores CSS cuelgan de #t3, para no reestilar las otras
+       pestañas sin querer.
+  Los colores salen de los tokens que define ConsolaH.html.
+-->
+<style>
+  #t3 .revbar{display:flex;gap:26px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
+  #t3 .kpi b{display:block;font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.15}
+  #t3 .kpi span{font-size:11px;color:var(--faint)}
+
+  #t3 .app{display:grid;grid-template-columns:296px 1fr;min-height:calc(100vh - 190px)}
+  #t3 .panel-izq{border-right:1px solid var(--line);background:var(--panel);overflow-y:auto;max-height:calc(100vh - 190px)}
+  #t3 .panel-der{padding:22px 26px 80px;max-width:1000px}
+
+  #t3 .filtro-aud{padding:10px 12px 0}
+  #t3 .filtro-aud select{width:100%;font:inherit;font-size:13px;padding:6px 8px;
+    border:1px solid var(--line);border-radius:6px;background:transparent;color:inherit}
+  #t3 .filtros{display:flex;gap:6px;padding:12px 12px 10px;border-bottom:1px solid var(--line);
+               position:sticky;top:0;background:var(--panel);z-index:5}
+  #t3 .filtros button{flex:1;padding:6px 4px;border:1px solid var(--line);background:transparent;
+                      color:var(--soft);border-radius:7px;font-size:12px}
+  #t3 .filtros button.on{background:var(--acc-bg);border-color:var(--acc);color:var(--acc);font-weight:600}
+
+  #t3 .item{padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:10px;align-items:flex-start}
+  #t3 .item:hover{background:var(--bg)}
+  #t3 .item.sel{background:var(--acc-bg);box-shadow:inset 3px 0 0 var(--acc)}
+  #t3 .item .id{font-weight:600;font-variant-numeric:tabular-nums;font-size:13px}
+  #t3 .item .meta{font-size:11.5px;color:var(--faint);margin-top:2px}
+  #t3 .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:0 0 8px}
+  #t3 .dot.done{background:var(--ok)} #t3 .dot.todo{background:var(--warn)}
+
+  #t3 .tarjeta{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-bottom:16px}
+  #t3 .titulo{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:12px}
+  #t3 .titulo h2{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;margin:0}
+  #t3 .chips{display:flex;flex-wrap:wrap;gap:6px}
+  #t3 .chip{font-size:11px;padding:3px 9px;border-radius:20px;background:var(--na-bg);color:var(--na);font-weight:600}
+  #t3 .chip.nota{background:var(--acc-bg);color:var(--acc)}
+
+  #t3 .datos{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:11px 18px;font-size:12.5px}
+  #t3 .datos div span{display:block;color:var(--faint);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em}
+  #t3 .datos div b{font-weight:500;word-break:break-all}
+
+  #t3 .puntaje{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start;
+               background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+               padding:18px 20px;margin-bottom:16px}
+  #t3 .puntaje .nota{font-size:42px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--acc)}
+  #t3 .puntaje .nota.cero{color:var(--bad)}
+  #t3 .puntaje .met{font-size:12.5px}
+  #t3 .puntaje .met b{display:block;font-size:17px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.2}
+  #t3 .puntaje .met span{color:var(--faint);font-size:11px}
+  #t3 .puntaje .estado{align-self:center}
+  #t3 .avisos{margin:12px 0 0;padding-left:19px;font-size:12.5px;color:var(--soft);width:100%}
+
+  #t3 .rehacer{border:1px solid var(--bad);background:transparent;color:var(--bad);
+               padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600}
+  #t3 .rehacer:hover{background:var(--bad-bg)}
+  #t3 .confirmar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--bad)}
+  #t3 .confirmar button{border:1px solid var(--line);background:transparent;color:var(--soft);
+                        padding:4px 11px;border-radius:6px;font-size:12px}
+  #t3 .confirmar button.si{border-color:var(--bad);color:#fff;background:var(--bad);font-weight:600}
+  #t3 .confirmar label{display:flex;gap:5px;align-items:center;color:var(--faint);font-size:11.5px}
+
+  #t3 .extra{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+  #t3 .extra button{border:1px solid var(--line);background:transparent;color:var(--soft);
+                    padding:7px 14px;border-radius:7px;font-size:12.5px}
+  #t3 .extra button:hover{border-color:var(--acc);color:var(--acc)}
+  #t3 .cargado{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+               margin-bottom:16px;padding:16px 20px}
+  #t3 .cargado h4{margin:0 0 8px;font-size:12.5px;font-weight:650}
+  #t3 .cargado pre{margin:0;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.6 var(--mono);color:var(--soft);max-height:460px;overflow:auto}
+
+  #t3 details.conv{margin-bottom:16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+  #t3 details.conv summary{padding:13px 20px;cursor:pointer;font-weight:600;font-size:13.5px;
+                           list-style:none;display:flex;justify-content:space-between}
+  #t3 details.conv summary::-webkit-details-marker{display:none}
+  #t3 details.conv summary::after{content:"mostrar";color:var(--faint);font-weight:400;font-size:12px}
+  #t3 details.conv[open] summary::after{content:"ocultar"}
+  #t3 details.conv pre{margin:0;padding:0 20px 18px;white-space:pre-wrap;word-break:break-word;
+    font:12.5px/1.6 var(--mono);color:var(--soft);max-height:520px;overflow:auto}
+
+  #t3 .crit{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);margin-bottom:8px;overflow:hidden}
+  #t3 .crit.dis{border-color:var(--bad)}
+  #t3 .crit .fila{display:grid;grid-template-columns:52px 1fr auto;gap:14px;padding:12px 16px;align-items:start}
+  #t3 .cid{font:600 12px var(--mono);color:var(--faint);padding-top:2px}
+  #t3 .ctxt{font-size:13.5px}
+  #t3 .ccrit{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--bad);
+             background:var(--bad-bg);padding:1px 6px;border-radius:4px;margin-left:7px;vertical-align:1px}
+  #t3 .cita{margin-top:7px;font-size:12.5px;color:var(--soft);border-left:2px solid var(--line);
+            padding-left:11px;font-style:italic}
+  #t3 .cmeta{margin-top:6px;font-size:11.5px;color:var(--faint)}
+  #t3 .ver{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+  #t3 .v-cumple{background:var(--ok-bg);color:var(--ok)}
+  #t3 .v-no_cumple{background:var(--bad-bg);color:var(--bad)}
+  #t3 .v-no_concluyente{background:var(--warn-bg);color:var(--warn)}
+  #t3 .v-no_aplica{background:var(--na-bg);color:var(--na)}
+
+  #t3 .acc{display:flex;flex-direction:column;gap:7px;align-items:flex-end}
+  #t3 .marcar{border:1px solid var(--line);background:transparent;color:var(--soft);
+              padding:5px 12px;border-radius:7px;font-size:12px;white-space:nowrap}
+  #t3 .marcar:hover{border-color:var(--bad);color:var(--bad)}
+  #t3 .crit.dis .marcar{background:var(--bad-bg);border-color:var(--bad);color:var(--bad);font-weight:600}
+
+  #t3 .detalle{display:none;padding:14px 16px 15px 118px;border-top:1px solid var(--line)}
+  #t3 .crit.dis .detalle{display:block}
+  #t3 .campo{margin-bottom:11px}
+  #t3 .campo label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+                   color:var(--faint);margin-bottom:5px}
+  #t3 select,#t3 textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;
+    background:var(--bg);color:var(--ink);font:inherit;font-size:13px}
+  #t3 textarea{resize:vertical;min-height:58px}
+  #t3 .par{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  #t3 .cierre{position:sticky;bottom:0;background:var(--panel);border:1px solid var(--line);
+              border-radius:var(--r);padding:16px 20px;margin-top:18px;box-shadow:var(--sombra-alta)}
+  #t3 .opts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  #t3 .opt{padding:8px 17px;border:1px solid var(--line);border-radius:7px;background:transparent;
+           color:var(--soft);font-size:13px}
+  #t3 .opt.on{font-weight:650}
+  #t3 .opt[data-v=correcta].on{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+  #t3 .opt[data-v=parcial].on{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+  #t3 .opt[data-v=incorrecta].on{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+  #t3 .pie{display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap}
+  #t3 .aviso{font-size:12.5px;color:var(--faint)}
+  #t3 .aviso.ok{color:var(--ok)} #t3 .aviso.err{color:var(--bad)}
+
+  #t3 .nada{color:var(--faint);padding:56px 20px;text-align:center;font-size:13.5px}
+  #t3 .nada b{display:block;color:var(--ink);font-weight:600;margin-bottom:5px;font-size:14px}
+
+  @media (max-width:900px){
+    #t3 .app{grid-template-columns:1fr}
+    #t3 .panel-izq{max-height:290px}
+    #t3 .detalle{padding-left:16px}
+  }
+</style>
+
+<div class="revbar">
+  <div class="kpi"><b id="rev-k-pend">–</b><span>por revisar</span></div>
+  <div class="kpi"><b id="rev-k-rev">–</b><span>revisadas</span></div>
+  <div class="kpi"><b id="rev-k-acu">–</b><span>acuerdo con el agente</span></div>
+  <div style="margin-left:auto;align-self:center" id="rev-masivo">
+    <button class="rehacer" id="rev-borrar-todo">Borrar todas las auditorías</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="panel-izq">
+    <div class="filtro-aud" id="rev-caja-aud" style="display:none">
+      <select id="rev-aud"><option value="">Todas las audiencias</option></select>
+    </div>
+    <div class="filtros">
+      <button data-f="pendientes" class="on">Por revisar</button>
+      <button data-f="revisados">Revisadas</button>
+      <button data-f="todos">Todas</button>
+    </div>
+    <div id="rev-lista"><div class="nada">Cargando…</div></div>
+  </div>
+
+  <div class="panel-der" id="rev-main">
+    <div class="nada">Elige un ticket de la lista para empezar.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var TICKETS = [], FILTRO = 'pendientes', ACTUAL = null, ESTADO = {}, CARGADO = false;
+  // Audiencia elegida en ESTA pestaña. Arranca con la de la cabecera de la
+  // consola, si hay una puesta: quien filtró arriba no espera que el paso 3
+  // le muestre otra cosa.
+  var AUD = '';
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function txt(e){ return e && e.message ? e.message : String(e); }
+
+  // ---------- carga ----------
+  function cargar(){
+    google.script.run.withSuccessHandler(function(r){
+      TICKETS = r; CARGADO = true; armarSelectorAud(); pintarLista();
+    }).withFailureHandler(function(e){
+      // El error se muestra en LOS DOS paneles: si solo lo pusiéramos en el
+      // de la derecha, el de la izquierda se queda en "Cargando…" y parece
+      // que la pantalla está colgada.
+      var m = '<div class="nada"><b>No pude cargar la lista</b>' + esc(txt(e)) + '</div>';
+      $('rev-lista').innerHTML = m;
+      $('rev-main').innerHTML  = m;
+    }).revListaTickets();
+    resumen();
+  }
+
+  function resumen(){
+    google.script.run.withSuccessHandler(function(s){
+      $('rev-k-pend').textContent = s.pendientes;
+      $('rev-k-rev').textContent  = s.revisados;
+      $('rev-k-acu').textContent  = s.acuerdoCriterios === null ? '–' : s.acuerdoCriterios + '%';
+    }).withFailureHandler(function(){ /* los contadores no bloquean nada */ })
+      .revResumen();
+  }
+
+  // ---------- lista ----------
+  document.querySelectorAll('#t3 .filtros button').forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll('#t3 .filtros button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); FILTRO = b.dataset.f; pintarLista();
+    };
+  });
+
+  // El selector se arma con lo que de verdad hay en la lista: si todos los
+  // tickets auditados son de una sola audiencia, no aparece.
+  function armarSelectorAud(){
+    var vistos = {}, orden = [];
+    TICKETS.forEach(function(t){
+      var k = t.audiencia || '';
+      if (!k || vistos[k]) return;
+      vistos[k] = t.audienciaNombre || k; orden.push(k);
+    });
+    if (orden.length < 2){ $('rev-caja-aud').style.display = 'none'; return; }
+    var sel = $('rev-aud');
+    sel.innerHTML = '<option value="">Todas las audiencias</option>';
+    orden.forEach(function(k){
+      var o = document.createElement('option');
+      o.value = k; o.textContent = vistos[k];
+      sel.appendChild(o);
+    });
+    sel.value = AUD;
+    $('rev-caja-aud').style.display = 'block';
+    sel.onchange = function(){ AUD = sel.value; pintarLista(); };
+  }
+
+  function pintarLista(){
+    var l = TICKETS.filter(function(t){
+      if (AUD && (t.audiencia || '') !== AUD) return false;
+      if (FILTRO === 'pendientes') return !t.revisado;
+      if (FILTRO === 'revisados')  return t.revisado;
+      return true;
+    });
+    var el = $('rev-lista');
+    if (!l.length){
+      el.innerHTML = TICKETS.length
+        ? '<div class="nada">Nada en esta vista.</div>'
+        : '<div class="nada"><b>Todavía no hay nada que revisar</b>' +
+          'Acá aparecen los tickets que ya tienen veredicto del agente. ' +
+          'Procesa alguno en la pestaña 2.</div>';
+      return;
+    }
+    el.innerHTML = l.map(function(t){
+      // La audiencia solo se escribe cuando hay más de una: repetir
+      // "Aeropuerto" en cada renglón de una lista de puros aeropuertos es
+      // ruido que empuja fuera lo que sí distingue a un ticket de otro.
+      var pre = ($('rev-caja-aud').style.display !== 'none' && !AUD && t.audienciaNombre)
+        ? t.audienciaNombre + ' · ' : '';
+      var sub = pre + (t.revisado
+        ? t.veredictoRevisor + ' · ' + t.desacuerdos + ' en desacuerdo'
+        : t.canal + ' · ' + t.criterios + ' criterios' + (t.notaModelo !== '' ? ' · nota ' + t.notaModelo : ''));
+      return '<div class="item' + (ACTUAL === t.ticket ? ' sel' : '') + '" data-t="' + esc(t.ticket) + '">' +
+             '<div class="dot ' + (t.revisado ? 'done' : 'todo') + '"></div>' +
+             '<div><div class="id">' + esc(t.ticket) + '</div>' +
+             '<div class="meta">' + esc(sub) + '</div></div></div>';
+    }).join('');
+    el.querySelectorAll('.item').forEach(function(d){
+      d.onclick = function(){ abrir(d.dataset.t); };
+    });
+  }
+
+  // ---------- ticket ----------
+  function abrir(ticket){
+    ACTUAL = ticket; pintarLista();
+    $('rev-main').innerHTML = '<div class="nada">Cargando ticket…</div>';
+    google.script.run.withSuccessHandler(pintar)
+      .withFailureHandler(function(e){
+        $('rev-main').innerHTML = '<div class="nada"><b>No pude abrir el ticket</b>' + esc(txt(e)) + '</div>';
+      }).revCargarTicket(ticket);
+  }
+
+  function pintar(d){
+    ESTADO = { ticket:d.ticket, canal:d.canal, veredicto:'', observaciones:'', desacuerdos:{} };
+    if (d.revision){ ESTADO.veredicto = d.revision.veredicto; ESTADO.observaciones = d.revision.observaciones; }
+    (d.desacuerdos || []).forEach(function(x){
+      ESTADO.desacuerdos[x.criterioId] = { criterioId:x.criterioId, veredictoRevisor:x.veredictoRevisor,
+                                           tipoError:x.tipoError, comentario:x.comentario };
+    });
+
+    var h = [], p = d.puntaje;
+
+    h.push('<div class="tarjeta"><div class="titulo"><h2>' + esc(d.ticket) + '</h2><div class="chips">' +
+      '<span class="chip">' + esc(d.canal) + '</span>' +
+      (d.agente ? '<span class="chip">' + esc(d.agente) + '</span>' : '') +
+      '</div></div>' +
+      '<div class="puntaje" style="border:none;padding:0;margin:0">' +
+        '<div><div class="nota' + (p.nota === 0 ? ' cero' : '') + '">' + p.nota + '</div>' +
+          '<span style="font-size:11px;color:var(--faint)">nota del modelo</span></div>' +
+        '<div class="met"><b>' + p.techo + '</b><span>techo alcanzable</span></div>' +
+        '<div class="met"><b>' + p.cobertura + '%</b><span>cobertura</span></div>' +
+        '<div class="met"><b>' + p.evaluados + ' / ' + p.aplicables + '</b><span>criterios evaluados</span></div>' +
+        '<div class="estado"><span class="chip' + (p.nota === 0 ? '' : ' nota') + '">' + esc(p.estado) + '</span></div>' +
+        (avisos(p).length ? '<ul class="avisos"><li>' + avisos(p).map(esc).join('</li><li>') + '</li></ul>' : '') +
+      '</div></div>');
+
+    // La conversación y el viaje NO vienen con el ticket: son 45.000 caracteres
+    // que casi nunca se abren. Se piden solo si la persona los quiere.
+    h.push('<div class="extra">' +
+      '<button data-carga="conversacion">Ver la conversación</button>' +
+      '<button data-carga="viaje">Ver los datos del viaje</button>' +
+      '<button class="rehacer" id="rev-rehacer">Borrar esta auditoría</button>' +
+      '</div><div id="rev-confirma"></div><div id="rev-extra"></div>');
+
+    h.push('<h3 style="margin:22px 0 10px;font-size:14px;font-weight:650">Veredictos del agente ' +
+      '<span style="font-weight:400;color:var(--faint);font-size:12.5px">— marca solo aquellos en los que no estés de acuerdo</span></h3>');
+
+    d.criterios.forEach(function(c){
+      var dis = !!ESTADO.desacuerdos[c.criterioId], g = ESTADO.desacuerdos[c.criterioId] || {};
+      h.push('<div class="crit' + (dis ? ' dis' : '') + '" id="rev-c-' + esc(c.criterioId) + '">' +
+        '<div class="fila">' +
+          '<div class="cid">' + esc(c.criterioId) + '</div>' +
+          '<div><div class="ctxt">' + esc(c.criterio) +
+            (c.afectacion === 'CRITICO' ? '<span class="ccrit">CRÍTICO</span>' : '') + '</div>' +
+            (c.cita ? '<div class="cita">' + esc(c.cita) + '</div>' : '') +
+            '<div class="cmeta">fuente: ' + esc(c.fuente || '—') + ' · confianza: ' + esc(c.confianza || '—') +
+              (c.autor ? ' · evaluó a: ' + esc(c.autor) : '') + '</div></div>' +
+          '<div class="acc"><span class="ver v-' + esc(c.veredicto) + '">' + esc(c.veredicto) + '</span>' +
+            '<button class="marcar" data-c="' + esc(c.criterioId) + '">' +
+            (dis ? 'en desacuerdo' : 'no estoy de acuerdo') + '</button></div>' +
+        '</div>' +
+        '<div class="detalle"><div class="par">' +
+            '<div class="campo"><label>Veredicto correcto</label>' + selVer(g.veredictoRevisor) + '</div>' +
+            '<div class="campo"><label>Por qué se equivocó</label>' + selErr(d.tiposError, g.tipoError) + '</div>' +
+          '</div><div class="campo"><label>Comentario</label>' +
+          '<textarea data-cm="' + esc(c.criterioId) + '" placeholder="Qué debió decir y en qué te basas.">' +
+          esc(g.comentario || '') + '</textarea></div></div></div>');
+    });
+
+    h.push('<div class="cierre"><label style="display:block;font-size:10.5px;text-transform:uppercase;' +
+      'letter-spacing:.06em;color:var(--faint);margin-bottom:8px">La auditoría en conjunto</label><div class="opts">' +
+      ['correcta','parcial','incorrecta'].map(function(v){
+        return '<button class="opt' + (ESTADO.veredicto === v ? ' on' : '') + '" data-v="' + v + '">' + v + '</button>';
+      }).join('') + '</div>' +
+      '<div class="campo"><label>Observaciones</label><textarea id="rev-obs" placeholder="Lo que quieras dejar anotado sobre esta auditoría.">' +
+      esc(ESTADO.observaciones || '') + '</textarea></div>' +
+      '<div class="pie"><button class="btn" id="rev-guardar">Guardar revisión</button>' +
+      '<span class="aviso" id="rev-aviso"></span></div></div>');
+
+    $('rev-main').innerHTML = h.join('');
+    enlazar();
+  }
+
+  function avisos(p){
+    return (p.avisos || []).concat(
+      p.criticos.length ? ['críticos incumplidos: ' + p.criticos.join(', ')] : [],
+      p.porConfirmar.length ? ['críticos por confirmar: ' + p.porConfirmar.join(', ')] : [],
+      p.noConcluyentes.length ? [p.noConcluyentes.length + ' criterios no concluyentes: ' +
+                                 p.noConcluyentes.join(', ')] : []);
+  }
+
+  function cargarExtra(que){
+    var caja = $('rev-extra');
+    caja.innerHTML = '<div class="cargado"><h4>Cargando…</h4></div>';
+    var fn = que === 'viaje' ? 'revViajeDe' : 'revConversacionDe';
+    google.script.run.withSuccessHandler(function(r){
+      caja.innerHTML = '<div class="cargado"><h4>' +
+        (que === 'viaje' ? 'Datos del viaje que usó el agente' : 'Conversación completa') +
+        '</h4><pre>' + esc(que === 'viaje' ? r.viaje : r.conversacion) + '</pre></div>';
+    }).withFailureHandler(function(e){
+      caja.innerHTML = '<div class="cargado"><h4>No pude cargarlo</h4><pre>' + esc(txt(e)) + '</pre></div>';
+    })[fn](ACTUAL);
+  }
+  function selVer(sel){
+    return '<select data-vr>' + ['','cumple','no_cumple','no_concluyente','no_aplica'].map(function(v){
+      return '<option value="' + v + '"' + (sel === v ? ' selected' : '') + '>' + (v || '— elige —') + '</option>';
+    }).join('') + '</select>';
+  }
+  function selErr(tipos, sel){
+    var etq = { regla:'La instrucción estaba mal o era ambigua', dato:'Le faltó información',
+                criterio:'Tenía todo y aun así juzgó mal' };
+    return '<select data-te>' + [''].concat(tipos || []).map(function(v){
+      return '<option value="' + v + '"' + (sel === v ? ' selected' : '') + '>' +
+             (v ? (etq[v] || v) : '— elige —') + '</option>';
+    }).join('') + '</select>';
+  }
+
+  // ---------- interacción ----------
+  function enlazar(){
+    document.querySelectorAll('#t3 .marcar').forEach(function(b){
+      b.onclick = function(){
+        var id = b.dataset.c, card = $('rev-c-' + id);
+        if (ESTADO.desacuerdos[id]){
+          delete ESTADO.desacuerdos[id];
+          card.classList.remove('dis'); b.textContent = 'no estoy de acuerdo';
+        } else {
+          ESTADO.desacuerdos[id] = { criterioId:id, veredictoRevisor:'', tipoError:'', comentario:'' };
+          card.classList.add('dis'); b.textContent = 'en desacuerdo';
+          var s = card.querySelector('[data-vr]'); if (s) s.focus();
+        }
+        avisar();
+      };
+    });
+    document.querySelectorAll('#t3 .crit').forEach(function(card){
+      var id = card.id.slice(6);   // "rev-c-" son 6 caracteres
+      var vr = card.querySelector('[data-vr]'), te = card.querySelector('[data-te]'),
+          cm = card.querySelector('[data-cm]');
+      function set(){
+        if (!ESTADO.desacuerdos[id]) return;
+        ESTADO.desacuerdos[id].veredictoRevisor = vr ? vr.value : '';
+        ESTADO.desacuerdos[id].tipoError        = te ? te.value : '';
+        ESTADO.desacuerdos[id].comentario       = cm ? cm.value : '';
+        avisar();
+      }
+      if (vr) vr.onchange = set;
+      if (te) te.onchange = set;
+      if (cm) cm.oninput  = set;
+    });
+    document.querySelectorAll('#t3 .opt').forEach(function(b){
+      b.onclick = function(){
+        ESTADO.veredicto = b.dataset.v;
+        document.querySelectorAll('#t3 .opt').forEach(function(x){ x.classList.remove('on'); });
+        b.classList.add('on'); avisar();
+      };
+    });
+    document.querySelectorAll('#t3 .extra button[data-carga]').forEach(function(b){
+      b.onclick = function(){ cargarExtra(b.dataset.carga); };
+    });
+    $('rev-rehacer').onclick = pedirConfirmacion;
+    $('rev-obs').oninput = function(){ ESTADO.observaciones = this.value; avisar(); };
+    $('rev-guardar').onclick = guardar;
+    avisar();
+  }
+
+  // ---------- borrar para rehacer ----------
+  //
+  // Dos pasos a propósito: el primero solo muestra la advertencia. Un botón
+  // que borra al primer clic invita a accidentes, y acá borrar significa
+  // perder el veredicto de un ticket ya auditado.
+  function pedirConfirmacion(){
+    var caja = $('rev-confirma');
+    caja.innerHTML =
+      '<div class="confirmar">' +
+        '<span>Se borrarán los veredictos de ' + esc(ACTUAL) + ' y volverá a la cola del paso 2.</span>' +
+        '<label><input type="checkbox" id="rev-tambien"> borrar también mi revisión</label>' +
+        '<button class="si" id="rev-si">Sí, borrar</button>' +
+        '<button id="rev-no">Cancelar</button>' +
+      '</div>';
+    $('rev-no').onclick = function(){ caja.innerHTML = ''; };
+    $('rev-si').onclick = function(){
+      var tambien = $('rev-tambien').checked;
+      caja.innerHTML = '<div class="confirmar">Borrando…</div>';
+      google.script.run.withSuccessHandler(function(r){
+        caja.innerHTML = '';
+        $('rev-main').innerHTML = '<div class="nada"><b>Auditoría borrada</b>' +
+          'El ticket ' + esc(r.ticket) + ' volvió a la cola del paso 2. ' +
+          'Vuelve a auditarlo y compara.</div>';
+        ACTUAL = null;
+        cargar();
+        if (window.CONSOLA) window.CONSOLA.refrescarEstado();
+      }).withFailureHandler(function(e){
+        caja.innerHTML = '<div class="confirmar">No se pudo borrar: ' + esc(txt(e)) + '</div>';
+      }).revBorrarAuditoria(ACTUAL, tambien);
+    };
+  }
+
+  function enlazarBorrarTodo(){
+    $('rev-borrar-todo').onclick = function(){
+      var caja = $('rev-masivo');
+      caja.innerHTML =
+        '<div class="confirmar">' +
+          '<span>Borra TODAS las auditorías y las devuelve a la cola.</span>' +
+          '<label><input type="checkbox" id="rev-todas-rev"> también las revisiones</label>' +
+          '<button class="si" id="rev-todo-si">Sí, borrar todo</button>' +
+          '<button id="rev-todo-no">Cancelar</button>' +
+        '</div>';
+      $('rev-todo-no').onclick = restaurarMasivo;
+      $('rev-todo-si').onclick = function(){
+        var tambien = $('rev-todas-rev').checked;
+        caja.innerHTML = '<div class="confirmar">Borrando…</div>';
+        google.script.run.withSuccessHandler(function(r){
+          restaurarMasivo();
+          $('rev-main').innerHTML = '<div class="nada"><b>' + r.tickets + ' auditorías borradas</b>' +
+            'Todas volvieron a la cola del paso 2.</div>';
+          ACTUAL = null; cargar();
+          if (window.CONSOLA) window.CONSOLA.refrescarEstado();
+        }).withFailureHandler(function(e){
+          restaurarMasivo();
+          $('rev-main').innerHTML = '<div class="nada"><b>No se pudo borrar</b>' + esc(txt(e)) + '</div>';
+        }).revBorrarTodasLasAuditorias(tambien);
+      };
+    };
+  }
+
+  function restaurarMasivo(){
+    $('rev-masivo').innerHTML =
+      '<button class="rehacer" id="rev-borrar-todo">Borrar todas las auditorías</button>';
+    enlazarBorrarTodo();
+  }
+
+  enlazarBorrarTodo();
+
+  function avisar(){
+    var n = Object.keys(ESTADO.desacuerdos).length, av = $('rev-aviso');
+    if (!av) return;
+    av.className = 'aviso';
+    av.textContent = ESTADO.veredicto
+      ? n + ' criterio(s) en desacuerdo.'
+      : (n ? n + ' criterio(s) marcados. Falta el veredicto general.'
+           : 'Sin desacuerdos por ahora. Falta el veredicto general.');
+    $('rev-guardar').disabled = !ESTADO.veredicto;
+  }
+
+  function guardar(){
+    var btn = $('rev-guardar'), av = $('rev-aviso');
+    var sinVer = Object.keys(ESTADO.desacuerdos).filter(function(k){
+      return !ESTADO.desacuerdos[k].veredictoRevisor; });
+    if (sinVer.length){
+      av.className = 'aviso err';
+      av.textContent = 'Falta el veredicto correcto en: ' + sinVer.join(', ');
+      return;
+    }
+    // Afirmar un incumplimiento exige decir en qué te basas. Absolver, no.
+    var sinPorque = Object.keys(ESTADO.desacuerdos).filter(function(k){
+      var g = ESTADO.desacuerdos[k];
+      return g.veredictoRevisor === 'no_cumple' && !String(g.comentario || '').trim(); });
+    if (sinPorque.length){
+      av.className = 'aviso err';
+      av.textContent = 'Marcaste no_cumple sin explicar en qué te basas: ' + sinPorque.join(', ');
+      return;
+    }
+
+    btn.disabled = true; av.className = 'aviso'; av.textContent = 'Guardando…';
+    google.script.run.withSuccessHandler(function(r){
+      av.className = 'aviso ok';
+      av.textContent = 'Guardado. Nota del modelo ' + (r.notaModelo === null ? '—' : r.notaModelo) +
+                       ' → corregida ' + r.notaCorregida + '.';
+      btn.disabled = false;
+      google.script.run.withSuccessHandler(function(l){ TICKETS = l; armarSelectorAud(); pintarLista(); }).revListaTickets();
+      resumen();
+      if (window.CONSOLA) window.CONSOLA.refrescarEstado();
+    }).withFailureHandler(function(e){
+      btn.disabled = false;
+      av.className = 'aviso err'; av.textContent = txt(e);
+    }).revGuardar({
+      ticket: ESTADO.ticket, canal: ESTADO.canal,
+      veredicto: ESTADO.veredicto, observaciones: ESTADO.observaciones,
+      desacuerdos: Object.keys(ESTADO.desacuerdos).map(function(k){ return ESTADO.desacuerdos[k]; }),
+    });
+  }
+
+  // La consola llama a esto cuando se abre la pestaña.
+  window.REVISION = {
+    init: function(){
+      // Hereda el filtro de la cabecera la primera vez y cada vez que se
+      // vuelve a la pestaña: es una sola consola, no tres pantallas sueltas.
+      if (window.CONSOLA && window.CONSOLA.audiencia) {
+        var g = window.CONSOLA.audiencia();
+        if (g !== undefined && g !== AUD) { AUD = g; if (CARGADO) { armarSelectorAud(); pintarLista(); } }
+      }
+      if (!CARGADO) cargar(); else resumen();
+    },
+    recargar: function(){ cargar(); },
+  };
+})();
+</script>
